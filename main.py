@@ -14,7 +14,7 @@ def draw_bones(frame, coords, connections, color, thickness=3):
                      color, thickness, cv2.LINE_AA)
 
 
-cap = cv2.VideoCapture('vids/sample.mp4')
+cap = cv2.VideoCapture('vids/slowmo.mp4')
 model_path = 'pose_landmarker.task'
 
 fps = cap.get(cv2.CAP_PROP_FPS)
@@ -71,19 +71,19 @@ with PoseLandmarker.create_from_options(options) as landmarker:
 
         result = landmarker.detect_for_video(mp_image, timestamp)
 
+        coords = {}
         frame_world_data = {}
 
         if result.pose_landmarks and result.pose_world_landmarks:
             for pose_landmarks, world_landmarks in zip(result.pose_landmarks, result.pose_world_landmarks):
-                coords = {}
 
                 for idx, landmark in enumerate(pose_landmarks):
-                    if idx in ALLOWED_INDICES and landmark.visibility > 0.2:
+                    if idx in ALLOWED_INDICES and landmark.visibility > 0.5:
                         coords[idx] = (int(landmark.x * w),
                                        int(landmark.y * h))
 
                 for idx, w_landmark in enumerate(world_landmarks):
-                    if idx in ALLOWED_INDICES and w_landmark.visibility > 0.2:
+                    if idx in ALLOWED_INDICES and w_landmark.visibility > 0.5:
                         frame_world_data[idx] = (
                             w_landmark.x, w_landmark.y, w_landmark.z)
 
@@ -99,7 +99,8 @@ with PoseLandmarker.create_from_options(options) as landmarker:
 
         kinematic_history.append({
             "timestamp": timestamp,
-            "world_coords": frame_world_data
+            "world_coords": frame_world_data,
+            "pixel_coords": coords
         })
 
         cv2.imshow('frame', frame)
@@ -108,5 +109,52 @@ with PoseLandmarker.create_from_options(options) as landmarker:
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
 
-cap.release()
-cv2.destroyAllWindows()
+cv2.destroyWindow('frame')
+
+print("\n--Signal Processing--")
+
+total_frames = len(kinematic_history)
+timeline = np.arange(total_frames)
+smoothed_kinematics = {}
+
+master_kinematic_matrix = np.full((total_frames, 33, 3), np.nan)
+
+for f_idx, frame_data in enumerate(kinematic_history):
+    world_coords = frame_data["world_coords"]
+    for joint_idx, coords in world_coords.items():
+        master_kinematic_matrix[f_idx, joint_idx] = coords
+
+fc = 14.0
+nyq = fps / 2.0
+if fc >= nyq:
+    fc = nyq * 0.5
+sos = butter(N=4, Wn=fc, btype='low', fs=fps, output='sos')
+
+for joint_idx in ALLOWED_INDICES:
+    joint_matrix = master_kinematic_matrix[:, joint_idx, :]
+
+    valid_frame_indices = np.where(~np.isnan(joint_matrix[:, 0]))[0]
+
+    if len(valid_frame_indices) == 0:
+        smoothed_kinematics[joint_idx] = np.zeros((total_frames, 3))
+        continue
+
+    interpolation_kind = 'cubic' if len(valid_frame_indices) >= 4 else 'linear'
+
+    interp_func = interp1d(
+        valid_frame_indices,
+        joint_matrix[valid_frame_indices],
+        kind=interpolation_kind,
+        axis=0,
+        bounds_error=False,
+        fill_value="extrapolate" if interpolation_kind == 'linear' else (
+            joint_matrix[valid_frame_indices[0]],
+            joint_matrix[valid_frame_indices[-1]]
+        )
+    )
+    interpolated_matrix = interp_func(timeline)
+
+    smoothed_matrix = sosfiltfilt(sos, interpolated_matrix, axis=0)
+    smoothed_kinematics[joint_idx] = smoothed_matrix
+
+print("Signal processing complete, multi-dimensional clean matrix generated.")
