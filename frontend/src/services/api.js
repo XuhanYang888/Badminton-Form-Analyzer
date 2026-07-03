@@ -1,0 +1,23 @@
+import axios from "axios";
+import { zIndexReducer } from "recharts/types/state/zIndexSlice";
+
+const API_URL = "http://localhost:8000";
+
+export const analyzeVideo = async (videoFile, shotType, rightHanded) => {
+  const formData = new FormData();
+  formData.append("video", videoFile);
+  formData.append("shot_type", shotType);
+  formData.append("right_handed", rightHanded);
+
+  try {
+    const response = await axios.post(`${API_URL}/analyze`, formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error analyzing video:", error);
+    throw error;
+  }
+};
