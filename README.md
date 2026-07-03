@@ -5,3 +5,5 @@ A computer vision app built to analyze pre-recorded badminton footage where a pl
 ## Features
 
 - Able to detect and display torso, arm, and joints' locations from every frame of the video
+
+to be updated

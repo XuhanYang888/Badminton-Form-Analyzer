@@ -1,2 +1,5 @@
 todo.md
-vids/
+backend/venv/
+backend/temp_vids/*
+backend/__pycache__/
+backend/core/__pycache__/
