@@ -48,6 +48,7 @@ async def analyze_video(
 
         return {
             "status": "success",
+            "fps": fps,
             "shot_type": shot_type,
             "critical_clip": {
                 "start_frame": analysis["clip_bounds"][0],

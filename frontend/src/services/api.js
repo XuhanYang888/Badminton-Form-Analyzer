@@ -1,5 +1,4 @@
 import axios from "axios";
-import { zIndexReducer } from "recharts/types/state/zIndexSlice";
 
 const API_URL = "http://localhost:8000";
 

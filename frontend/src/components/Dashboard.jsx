@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useRef } from "react";
 import {
   LineChart,
   Line,
@@ -10,70 +10,118 @@ import {
   ResponsiveContainer,
 } from "recharts";
 
-export default function Dashboard({ data, onReset }) {
+export default function Dashboard({ data, videoUrl, onReset }) {
+  const videoRef = useRef(null);
+  const fps = data.fps || 120;
   const chartData = data.chart_data.angles.map((angle, index) => ({
     frame: index,
     angle: angle,
     velocity: data.chart_data.velocities[index],
   }));
 
+  const handleChartHover = (state) => {
+    if (state && state.activePayload && videoRef.current) {
+      const frameIndex = state.activePayload[0].payload.frame;
+      const timeInSeconds = frameIndex / fps;
+      videoRef.current.currentTime = timeInSeconds;
+    }
+  };
+
   return (
     <div
       style={{
         padding: "20px",
-        maxWidth: "1000px",
+        maxWidth: "1200px",
         margin: "0 auto",
         fontFamily: "sans-serif",
       }}
     >
       <button
         onClick={onReset}
-        style={{ marginBottom: "20px", padding: "10px" }}
+        style={{ marginBottom: "20px", padding: "10px", cursor: "pointer" }}
       >
         ← Analyze Another Video
       </button>
 
       <h1>{data.shot_type.toUpperCase()} Analysis Results</h1>
 
-      <div style={{ display: "flex", gap: "20px", marginBottom: "30px" }}>
+      <div
+        style={{
+          display: "flex",
+          gap: "20px",
+          marginBottom: "30px",
+          flexWrap: "wrap",
+        }}
+      >
         <div
           style={{
-            flex: 1,
-            padding: "20px",
-            backgroundColor: "#f0fdf4",
+            flex: "1 1 500px",
+            backgroundColor: "#000",
             borderRadius: "8px",
+            overflow: "hidden",
           }}
         >
-          <h3>Scientific Metrics</h3>
-          <p>
-            <strong>Max Racket Drop Angle:</strong>{" "}
-            {data.metrics.drop.toFixed(1)}°
-          </p>
-          <p>
-            <strong>Contact Extension:</strong>{" "}
-            {data.metrics.extension.toFixed(1)}°
-          </p>
-          <p>
-            <strong>Peak Pronation Speed:</strong>{" "}
-            {data.metrics.velocity.toFixed(1)}°/s
-          </p>
+          <video
+            ref={videoRef}
+            src={videoUrl}
+            controls
+            muted
+            style={{
+              width: "100%",
+              height: "100%",
+              objectFit: "contain",
+              display: "block",
+            }}
+          />
         </div>
         <div
           style={{
-            flex: 1,
-            padding: "20px",
-            backgroundColor: "#eff6ff",
-            borderRadius: "8px",
+            flex: "1 1 400px",
+            display: "flex",
+            flexDirection: "column",
+            gap: "20px",
           }}
         >
-          <h3>Coaching Feedback</h3>
-          <ul style={{ paddingLeft: "20px" }}>
-            {data.coaching_feedback.map((tip, i) => (
-              <li key={i} style={{ marginBottom: "10px" }}>
-                {tip}
-              </li>
-            ))}
-          </ul>
+          <div
+            style={{
+              padding: "20px",
+              backgroundColor: "#f0fdf4",
+              borderRadius: "8px",
+              border: "1px solid #bbf7d0",
+            }}
+          >
+            <h3 style={{ marginTop: 0 }}>Scientific Metrics</h3>
+            <p>
+              <strong>Max Racket Drop Angle:</strong>{" "}
+              {data.metrics.drop.toFixed(1)}°
+            </p>
+            <p>
+              <strong>Contact Extension:</strong>{" "}
+              {data.metrics.extension.toFixed(1)}°
+            </p>
+            <p>
+              <strong>Peak Pronation Speed:</strong>{" "}
+              {data.metrics.velocity.toFixed(1)}°/s
+            </p>
+          </div>
+
+          <div
+            style={{
+              padding: "20px",
+              backgroundColor: "#eff6ff",
+              borderRadius: "8px",
+              border: "1px solid #bfdbfe",
+            }}
+          >
+            <h3 style={{ marginTop: 0 }}>Coaching Feedback</h3>
+            <ul style={{ paddingLeft: "20px", margin: 0 }}>
+              {data.coaching_feedback.map((tip, i) => (
+                <li key={i} style={{ marginBottom: "10px" }}>
+                  {tip}
+                </li>
+              ))}
+            </ul>
+          </div>
         </div>
       </div>
 
@@ -86,10 +134,11 @@ export default function Dashboard({ data, onReset }) {
           padding: "20px",
           borderRadius: "8px",
           border: "1px solid #ccc",
+          boxSizing: "border-box",
         }}
       >
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={chartData}>
+          <LineChart data={chartData} onMouseMove={handleChartHover}>
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis
               dataKey="frame"
@@ -123,6 +172,7 @@ export default function Dashboard({ data, onReset }) {
               strokeWidth={2}
               name="Elbow Angle (°)"
               dot={false}
+              activeDot={{ r: 6 }}
             />
             <Line
               yAxisId="right"
@@ -132,6 +182,7 @@ export default function Dashboard({ data, onReset }) {
               strokeWidth={2}
               name="Angular Velocity (°/s)"
               dot={false}
+              activeDot={{ r: 6 }}
             />
           </LineChart>
         </ResponsiveContainer>
