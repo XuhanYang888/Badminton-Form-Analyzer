@@ -1,0 +1,44 @@
+import cv2
+import numpy as np
+
+
+def create_annotated_video(input_video_path, output_video_path, kinematics, fps):
+    cap = cv2.VideoCapture(input_video_path)
+    width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+    height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+
+    fourcc = cv2.VideoWriter_fourcc(*'avc1')
+    out = cv2.VideoWriter(output_video_path, fourcc, fps, (width, height))
+
+    s_points = kinematics["points"]["s"]
+    e_points = kinematics["points"]["e"]
+    w_points = kinematics["points"]["w"]
+
+    frame_idx = 0
+    while cap.isOpened():
+        ret, frame = cap.read()
+        if not ret:
+            break
+
+        if frame_idx < len(s_points):
+            s = s_points[frame_idx]
+            e = e_points[frame_idx]
+            w = w_points[frame_idx]
+
+            if not np.isnan(s[0]) and not np.isnan(e[0]) and not np.isnan(w[0]):
+                p1 = (int(s[0]), int(s[1]))
+                p2 = (int(e[0]), int(e[1]))
+                p3 = (int(w[0]), int(w[1]))
+
+                cv2.line(frame, p1, p2, (0, 255, 0), 4)
+                cv2.line(frame, p2, p3, (0, 255, 255), 4)
+
+                cv2.circle(frame, p1, 6, (0, 0, 255), -1)
+                cv2.circle(frame, p2, 6, (0, 0, 255), -1)
+                cv2.circle(frame, p3, 6, (0, 0, 255), -1)
+
+        out.write(frame)
+        frame_idx += 1
+
+    cap.release()
+    out.release()

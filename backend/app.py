@@ -3,7 +3,10 @@ import shutil
 from fastapi import FastAPI, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
 from pathlib import Path
+from fastapi.staticfiles import StaticFiles
+import uuid
 
+from core.video_render import create_annotated_video
 from core.tracking import extract_2d_pose_data
 from core.kinematics import process_kinematics
 from core.diagnostics import analyze_shot
@@ -20,6 +23,9 @@ app.add_middleware(
 
 TEMP_DIR = Path("temp_vids")
 TEMP_DIR.mkdir(exist_ok=True)
+OUTPUT_DIR = Path("outputs")
+OUTPUT_DIR.mkdir(exist_ok=True)
+app.mount("/outputs", StaticFiles(directory="outputs"), name="outputs")
 
 
 @app.post("/analyze")
@@ -44,11 +50,18 @@ async def analyze_video(
         print(f"3. Running Diagnostics for: {shot_type.upper()}...")
         analysis = analyze_shot(kinematics, fps, shot_type)
 
+        print("4. Drawing AI Skeleton on Video...")
+        output_filename = f"{uuid.uuid4()}.mp4"
+        output_filepath = OUTPUT_DIR / output_filename
+        create_annotated_video(str(file_location), str(
+            output_filepath), kinematics, fps)
+
         os.remove(file_location)
 
         return {
             "status": "success",
             "fps": fps,
+            "annotated_video_url": f"http://localhost:8000/outputs/{output_filename}",
             "shot_type": shot_type,
             "critical_clip": {
                 "start_frame": analysis["clip_bounds"][0],

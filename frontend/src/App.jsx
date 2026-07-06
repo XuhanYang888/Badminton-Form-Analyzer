@@ -18,7 +18,7 @@ function App() {
     try {
       const data = await analyzeVideo(file, shotType, true);
       setResults(data);
-      setVideoUrl(URL.createObjectURL(file));
+      setVideoUrl(data.annotated_video_url);
     } catch (error) {
       alert("Error processing video. Make sure FastAPI is running!");
     } finally {

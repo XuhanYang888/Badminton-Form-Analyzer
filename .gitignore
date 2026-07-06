@@ -1,5 +1,6 @@
 todo.md
 backend/venv/
 backend/temp_vids/*
+backend/outputs/*
 backend/__pycache__/
 backend/core/__pycache__/
