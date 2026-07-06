@@ -74,6 +74,8 @@ function App() {
       >
         <input
           type="file"
+          id="videoUpload"
+          name="videoUpload"
           accept="video/mp4,video/quicktime"
           onChange={(e) => setFile(e.target.files[0])}
           style={{ padding: "10px", border: "1px dashed #ccc" }}
@@ -81,6 +83,8 @@ function App() {
         />
 
         <select
+          id="shotType"
+          name="shotType"
           value={shotType}
           onChange={(e) => setShotType(e.target.value)}
           style={{ padding: "10px", fontSize: "16px" }}

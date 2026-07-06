@@ -1,4 +1,4 @@
-import React, { useRef } from "react";
+import React, { useRef, useEffect } from "react";
 import {
   LineChart,
   Line,
@@ -19,12 +19,45 @@ export default function Dashboard({ data, videoUrl, onReset }) {
     velocity: data.chart_data.velocities[index],
   }));
 
-  const handleChartHover = (state) => {
-    if (state && state.activePayload && videoRef.current) {
-      const frameIndex = state.activePayload[0].payload.frame;
-      const timeInSeconds = frameIndex / fps;
-      videoRef.current.currentTime = timeInSeconds;
+  const SyncingTooltip = ({ active, payload, label }) => {
+    useEffect(() => {
+      if (active && payload && payload.length > 0 && videoRef.current) {
+        const frameIndex = payload[0].payload.frame;
+        const timeInSeconds = frameIndex / fps;
+
+        if (videoRef.current.readyState >= 1) {
+          if (!videoRef.current.paused) {
+            videoRef.current.pause();
+          }
+          videoRef.current.currentTime = timeInSeconds;
+        }
+      }
+    }, [active, payload]);
+
+    if (active && payload && payload.length > 0) {
+      return (
+        <div
+          style={{
+            backgroundColor: "white",
+            padding: "10px",
+            border: "1px solid #ccc",
+            borderRadius: "5px",
+            boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+          }}
+        >
+          <p style={{ margin: "0 0 5px 0" }}>
+            <strong>Frame: {payload[0].payload.frame}</strong>
+          </p>
+          <p style={{ margin: "0", color: "#2563eb" }}>
+            Angle: {payload[0].payload.angle?.toFixed(1)}°
+          </p>
+          <p style={{ margin: "0", color: "#dc2626" }}>
+            Velocity: {payload[0].payload.velocity?.toFixed(1)}°/s
+          </p>
+        </div>
+      );
     }
+    return null;
   };
 
   return (
@@ -104,7 +137,6 @@ export default function Dashboard({ data, videoUrl, onReset }) {
               {data.metrics.velocity.toFixed(1)}°/s
             </p>
           </div>
-
           <div
             style={{
               padding: "20px",
@@ -138,7 +170,7 @@ export default function Dashboard({ data, videoUrl, onReset }) {
         }}
       >
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={chartData} onMouseMove={handleChartHover}>
+          <LineChart data={chartData}>
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis
               dataKey="frame"
@@ -161,7 +193,8 @@ export default function Dashboard({ data, videoUrl, onReset }) {
                 position: "insideRight",
               }}
             />
-            <Tooltip />
+
+            <Tooltip content={<SyncingTooltip />} />
             <Legend verticalAlign="top" height={36} />
 
             <Line
