@@ -1,5 +1,8 @@
 import os
 import shutil
+import asyncio
+import time
+from contextlib import suppress
 from fastapi import FastAPI, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
 from pathlib import Path
@@ -26,6 +29,58 @@ TEMP_DIR.mkdir(exist_ok=True)
 OUTPUT_DIR = Path("outputs")
 OUTPUT_DIR.mkdir(exist_ok=True)
 app.mount("/outputs", StaticFiles(directory="outputs"), name="outputs")
+
+OUTPUT_RETENTION_HOURS = int(os.getenv("OUTPUT_RETENTION_HOURS", "24"))
+OUTPUT_CLEANUP_INTERVAL_SECONDS = int(
+    os.getenv("OUTPUT_CLEANUP_INTERVAL_SECONDS", "600")
+)
+
+
+def cleanup_old_output_files() -> int:
+    if OUTPUT_RETENTION_HOURS <= 0:
+        return 0
+
+    now = time.time()
+    retention_seconds = OUTPUT_RETENTION_HOURS * 3600
+    deleted_count = 0
+
+    for file_path in OUTPUT_DIR.iterdir():
+        if not file_path.is_file():
+            continue
+
+        file_age_seconds = now - file_path.stat().st_mtime
+        if file_age_seconds > retention_seconds:
+            with suppress(FileNotFoundError):
+                file_path.unlink()
+                deleted_count += 1
+
+    return deleted_count
+
+
+async def output_cleanup_loop():
+    while True:
+        try:
+            deleted_count = cleanup_old_output_files()
+            if deleted_count > 0:
+                print(f"Cleaned up {deleted_count} old output file(s).")
+        except Exception as exc:
+            print(f"Output cleanup error: {exc}")
+
+        await asyncio.sleep(max(OUTPUT_CLEANUP_INTERVAL_SECONDS, 60))
+
+
+@app.on_event("startup")
+async def startup_event():
+    app.state.output_cleanup_task = asyncio.create_task(output_cleanup_loop())
+
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    task = getattr(app.state, "output_cleanup_task", None)
+    if task:
+        task.cancel()
+        with suppress(asyncio.CancelledError):
+            await task
 
 
 @app.post("/analyze")
