@@ -29,9 +29,9 @@ app.add_middleware(
 
 TEMP_DIR = Path("temp_vids")
 TEMP_DIR.mkdir(exist_ok=True)
-OUTPUT_DIR = Path("outputs")
+OUTPUT_DIR = Path("outputs").resolve()
 OUTPUT_DIR.mkdir(exist_ok=True)
-app.mount("/outputs", StaticFiles(directory="outputs"), name="outputs")
+app.mount("/outputs", StaticFiles(directory=str(OUTPUT_DIR)), name="outputs")
 
 OUTPUT_RETENTION_HOURS = int(os.getenv("OUTPUT_RETENTION_HOURS", "24"))
 OUTPUT_CLEANUP_INTERVAL_SECONDS = int(
