@@ -3,7 +3,7 @@ import shutil
 import asyncio
 import time
 from contextlib import suppress
-from fastapi import FastAPI, UploadFile, File, Form
+from fastapi import FastAPI, UploadFile, File, Form, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pathlib import Path
 from fastapi.staticfiles import StaticFiles
@@ -85,6 +85,7 @@ async def shutdown_event():
 
 @app.post("/analyze")
 async def analyze_video(
+    request: Request,
     video: UploadFile = File(...),
     shot_type: str = Form("smash"),
     right_handed: bool = Form(True)
@@ -113,10 +114,12 @@ async def analyze_video(
 
         os.remove(file_location)
 
+        base_url = str(request.base_url)
+
         return {
             "status": "success",
             "fps": fps,
-            "annotated_video_url": f"http://localhost:8000/outputs/{output_filename}",
+            "annotated_video_url": f"{base_url}outputs/{output_filename}",
             "shot_type": shot_type,
             "critical_clip": {
                 "start_frame": analysis["clip_bounds"][0],
