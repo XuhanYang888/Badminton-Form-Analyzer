@@ -46,13 +46,20 @@ def create_annotated_video(input_video_path, output_video_path, kinematics, fps)
     cap.release()
     out.release()
 
-    subprocess.run([
+    result = subprocess.run([
         "ffmpeg", "-y",
         "-i", temp_path,
         "-vcodec", "libx264",
         "-pix_fmt", "yuv420p",
+        "-vf", "scale=trunc(iw/2)*2:trunc(ih/2)*2",
         output_video_path
-    ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    ], capture_output=True, text=True)
+
+    if result.returncode != 0:
+        print("Error:")
+        print(result.stderr)
+    else:
+        print("Success.")
 
     if os.path.exists(temp_path):
         os.remove(temp_path)
