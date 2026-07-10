@@ -13,6 +13,12 @@ A computer vision tool for analyzing pre-recorded badminton strokes. The app tra
 - Interactive frontend dashboard with synced chart-to-video scrubbing
 - Automatic cleanup of old generated videos in backend/outputs
 
+## Try it!
+
+Website: [link](https://badminton-form-analyzer.vercel.app/)
+
+Videos for testing: [Google Drive](https://drive.google.com/drive/folders/1fjRlE0X4GozYcTmBNXrzHIzD0tkmrtCl?usp=sharing)
+
 ## Setup
 
 ### 1. Start the backend
