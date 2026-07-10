@@ -11,11 +11,13 @@ def create_annotated_video(input_video_path, output_video_path, kinematics, fps)
         cap.release()
         return
     true_height, true_width = test_frame.shape[:2]
-    cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
+    cap.release()
+    cap = cv2.VideoCapture(input_video_path)
 
     temp_path = output_video_path.replace(".mp4", "_temp.mp4")
     fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-    out = cv2.VideoWriter(temp_path, fourcc, fps, (true_width, true_height))
+    out = cv2.VideoWriter(temp_path, fourcc, fps,
+                          (int(true_width), int(true_height)))
 
     s_points = kinematics["points"]["s"]
     e_points = kinematics["points"]["e"]
@@ -59,10 +61,7 @@ def create_annotated_video(input_video_path, output_video_path, kinematics, fps)
     ], capture_output=True, text=True)
 
     if result.returncode != 0:
-        print("Error:")
         print(result.stderr)
-    else:
-        print("Success.")
 
     if os.path.exists(temp_path):
         os.remove(temp_path)
