@@ -6,12 +6,16 @@ import os
 
 def create_annotated_video(input_video_path, output_video_path, kinematics, fps):
     cap = cv2.VideoCapture(input_video_path)
-    width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-    height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+    ret, test_frame = cap.read()
+    if not ret:
+        cap.release()
+        return
+    true_height, true_width = test_frame.shape[:2]
+    cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
 
     temp_path = output_video_path.replace(".mp4", "_temp.mp4")
     fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-    out = cv2.VideoWriter(temp_path, fourcc, fps, (width, height))
+    out = cv2.VideoWriter(temp_path, fourcc, fps, (true_width, true_height))
 
     s_points = kinematics["points"]["s"]
     e_points = kinematics["points"]["e"]
@@ -35,7 +39,6 @@ def create_annotated_video(input_video_path, output_video_path, kinematics, fps)
 
                 cv2.line(frame, p1, p2, (0, 255, 0), 4)
                 cv2.line(frame, p2, p3, (0, 255, 255), 4)
-
                 cv2.circle(frame, p1, 6, (0, 0, 255), -1)
                 cv2.circle(frame, p2, 6, (0, 0, 255), -1)
                 cv2.circle(frame, p3, 6, (0, 0, 255), -1)
