@@ -1,7 +1,12 @@
+from core.diagnostics import analyze_shot
+from core.kinematics import process_kinematics
+from core.tracking import extract_2d_pose_data
+from core.video_render import create_annotated_video
 import os
 import shutil
 import asyncio
 import time
+import mimetypes
 from contextlib import suppress
 from fastapi import FastAPI, UploadFile, File, Form, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -9,10 +14,8 @@ from pathlib import Path
 from fastapi.staticfiles import StaticFiles
 import uuid
 
-from core.video_render import create_annotated_video
-from core.tracking import extract_2d_pose_data
-from core.kinematics import process_kinematics
-from core.diagnostics import analyze_shot
+mimetypes.add_type('video/mp4', '.mp4')
+
 
 app = FastAPI(title="Badminton Kinematic API")
 
@@ -114,12 +117,14 @@ async def analyze_video(
 
         os.remove(file_location)
 
-        base_url = str(request.base_url)
+        protocol = request.headers.get("x-forwarded-proto", "http")
+        host = request.headers.get("host", "localhost:8000")
 
         return {
             "status": "success",
             "fps": fps,
-            "annotated_video_url": f"{base_url}outputs/{output_filename}",
+            # <--- Fixed URL
+            "annotated_video_url": f"{protocol}://{host}/outputs/{output_filename}",
             "shot_type": shot_type,
             "critical_clip": {
                 "start_frame": analysis["clip_bounds"][0],
