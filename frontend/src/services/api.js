@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const API_URL = "http://localhost:8000";
+const API_URL = "https://badminton-form-analyzer-production.up.railway.app";
 
 export const analyzeVideo = async (videoFile, shotType, rightHanded) => {
   const formData = new FormData();

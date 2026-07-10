@@ -17,11 +17,16 @@ function App() {
     setIsProcessing(true);
     try {
       const data = await analyzeVideo(file, shotType, true);
+      if (data.status === "error") {
+        alert("Python Error: " + data.message);
+        setIsProcessing(false);
+        return;
+      }
       setResults(data);
       setVideoUrl(data.annotated_video_url);
     } catch (error) {
       console.error(error);
-      alert("Error processing video. Make sure FastAPI is running!");
+      alert("Network Error: Could not reach the FastAPI server!");
     } finally {
       setIsProcessing(false);
     }
