@@ -55,6 +55,8 @@ def create_annotated_video(input_video_path, output_video_path, kinematics, fps)
         "ffmpeg", "-y",
         "-i", temp_path,
         "-vcodec", "libx264",
+        "-preset", "ultrafast",
+        "-threads", "1",
         "-pix_fmt", "yuv420p",
         "-vf", "scale=trunc(iw/2)*2:trunc(ih/2)*2",
         output_video_path
