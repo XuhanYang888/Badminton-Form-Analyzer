@@ -18,7 +18,7 @@ def analyze_shot(kinematics, fps, shot_type="smash"):
 
     feedback = []
 
-    if min_angle > 60:
+    if min_angle > 80:
         feedback.append(
             "1. Racket Drop: Too shallow. Bend your elbow more behind your back to utilize the stretch-shortening cycle.")
     else:
@@ -33,7 +33,7 @@ def analyze_shot(kinematics, fps, shot_type="smash"):
             f"2. Extension: Great reach ({max_angle:.1f}°). You are making contact at the peak of your swing.")
 
     if shot_type == "smash" or shot_type == "clear":
-        if max_vel < 900:
+        if max_vel < 800:
             feedback.append(
                 f"3. Pronation Speed: A bit slow ({max_vel:.1f}°/s). Focus on relaxing your grip and snapping right at contact.")
         else:

@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import { analyzeVideo } from "./services/api";
 import Dashboard from "./components/Dashboard";
 import { Loader2, UploadCloud, Activity } from "lucide-react";
-import { selectCalculatedXAxisPadding } from "recharts/types/state/selectors/axisSelectors";
 
 function App() {
   const [file, setFile] = useState(null);
