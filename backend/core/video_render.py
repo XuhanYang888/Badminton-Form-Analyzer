@@ -1,5 +1,7 @@
 import cv2
 import numpy as np
+import subprocess
+import os
 
 
 def create_annotated_video(input_video_path, output_video_path, kinematics, fps):
@@ -7,8 +9,9 @@ def create_annotated_video(input_video_path, output_video_path, kinematics, fps)
     width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
     height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
 
+    temp_path = output_video_path.replace(".mp4", "_temp.mp4")
     fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-    out = cv2.VideoWriter(output_video_path, fourcc, fps, (width, height))
+    out = cv2.VideoWriter(temp_path, fourcc, fps, (width, height))
 
     s_points = kinematics["points"]["s"]
     e_points = kinematics["points"]["e"]
@@ -42,3 +45,14 @@ def create_annotated_video(input_video_path, output_video_path, kinematics, fps)
 
     cap.release()
     out.release()
+
+    subprocess.run([
+        "ffmpeg", "-y",
+        "-i", temp_path,
+        "-vcodec", "libx264",
+        "-pix_fmt", "yuv420p",
+        output_video_path
+    ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+    if os.path.exists(temp_path):
+        os.remove(temp_path)
